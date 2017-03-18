@@ -1,0 +1,7 @@
+<resources>
+    <string name="google_maps_key"
+        templateMergeStrategy="preserve"
+        translatable="false">AIzaSyCzsqxjviUiMoMCrgif66WiaCr3q-CEMuQ</string>
+    <string name="flickr_api_key" translatable="false">
+        bd51bf0d4026eb36132d913f1644a973</string>
+</resources>

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">GeoPhoto</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="action_display_list">Display List</string>
+    <string name="action_display_map">Display Map</string>
+    <string name="action_search">Search</string>
+    <string name="action_search_hint">Search photo by tag</string>
+    <string name="author_name_format">By %s</string>
+    <string name="error_empty">No photos matches your criteria</string>
+    <string name="error_internet">Cannot obtain data, please check your internet connection</string>
+</resources>
