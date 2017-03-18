@@ -6,8 +6,8 @@ import android.view.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.model.MarkerOptions
 import com.kuanyi.geophoto.R
-import com.kuanyi.geophoto.component.MarkerGenerator
 import com.kuanyi.geophoto.model.GsonPhoto
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
@@ -38,7 +38,7 @@ class PhotoDetailFragment(photoItem : GsonPhoto) : Fragment(), OnMapReadyCallbac
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
         Picasso.with(activity)
-                .load(mPhotoItem.buildPhotoUrl(true))
+                .load(mPhotoItem.buildPhotoUrl("h"))
                 .placeholder(R.color.black).fit()
                 .into(photoDetailImage)
         detailUserName.text = String.format(getString(R.string.author_name_format),
@@ -61,7 +61,8 @@ class PhotoDetailFragment(photoItem : GsonPhoto) : Fragment(), OnMapReadyCallbac
             mMapView.uiSettings.isCompassEnabled = false
             mMapView.moveCamera(CameraUpdateFactory.newLatLngZoom(mPhotoItem.getLatLng(), 16f))
             //override onMarkerClickListener so click on marker will not have any action
-            mMapView.addMarker(MarkerGenerator.createMarker(mPhotoItem))
+            mMapView.addMarker(MarkerOptions()
+                    .position(mPhotoItem.getLatLng()))
             mMapView.setOnMarkerClickListener { true }
         }
     }

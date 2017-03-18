@@ -97,7 +97,7 @@ class ListRecyclerViewAdapter(val callback: onPhotoItemClicked) :
 
     class PhotoInfoHolder(itemView: View, val callback : onPhotoItemClicked) : RecyclerView.ViewHolder(itemView) {
         fun bindPhoto(photoItem : GsonPhoto) {
-            Picasso.with(itemView.context).load(photoItem.buildPhotoUrl(false))
+            Picasso.with(itemView.context).load(photoItem.buildPhotoUrl("m"))
                     .fit().into(itemView.listItemImage)
             itemView.listItemTitle.text = photoItem.title
             itemView.listItemUserName.text = photoItem.ownername

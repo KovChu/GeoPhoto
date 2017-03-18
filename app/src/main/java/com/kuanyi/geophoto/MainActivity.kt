@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
             mSwitchItem.setTitle(R.string.action_display_map)
             openListFragment()
         }else {
-            mSwitchItem.setIcon(android.R.drawable.ic_menu_slideshow)
+            mSwitchItem.setIcon(R.drawable.ic_list)
             mSwitchItem.setTitle(R.string.action_display_list)
             removeListFragment()
         }

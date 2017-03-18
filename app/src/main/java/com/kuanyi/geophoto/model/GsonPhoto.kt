@@ -31,11 +31,10 @@ class GsonPhoto(
     }
 
     // https://farm{farm-id}.staticflickr.com/{server-id}/{id}_{secret}.jpg
-    // use _q for square(150x150) image and h for larger (1600) images
+    // use q for square(150x150) image and h for larger (1600) images
 
-    fun buildPhotoUrl(isLargeSize : Boolean) : String {
-        val format = if (isLargeSize) "h" else "q"
-        return "https://farm$farm.staticflickr.com/$server/${id}_${secret}_${format}.jpg"
+    fun buildPhotoUrl(imageSize : String) : String {
+        return "https://farm$farm.staticflickr.com/$server/${id}_${secret}_${imageSize}.jpg"
 //        return String.format(IMAGE_URL, farm, server, id, secret, if(isLargeSize) "h" else "q")
     }
 

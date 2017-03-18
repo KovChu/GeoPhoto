@@ -3,38 +3,32 @@ package com.kuanyi.geophoto.map
 import android.app.Fragment
 import android.location.Location
 import android.os.Bundle
-import android.support.v4.view.ViewPager
+import android.support.design.widget.Snackbar
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.*
 import com.kuanyi.geophoto.MainActivity
 import com.kuanyi.geophoto.R
-import com.kuanyi.geophoto.component.MarkerGenerator
-import com.kuanyi.geophoto.component.onPhotoItemClicked
 import com.kuanyi.geophoto.manager.DataManager
 import com.kuanyi.geophoto.model.GsonPhoto
 import kotlinx.android.synthetic.main.fragment_maps.*
-import java.util.*
 
 
 /**
  * Created by kuanyi on 2017/3/15.
  */
-class MapFragment : Fragment(), OnMapReadyCallback,
-        DataManager.PhotoCallback, ViewPager.OnPageChangeListener, onPhotoItemClicked {
+class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
 
-    private var mPhotoAdapter = MapViewPagerAdapter(this)
+    var mPhotoMarkerMap = HashMap<GsonPhoto, Marker>()
 
-    private var mPhotoMarkerMap = HashMap<GsonPhoto, Marker>()
+    var mResultSize = 0
 
-    private var mLastSelectedMarker : Marker? = null
-
+    var mProcessingSize = 0
 
     companion object {
         private lateinit var mMapView : GoogleMap
@@ -117,22 +111,19 @@ class MapFragment : Fragment(), OnMapReadyCallback,
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
         DataManager.instance.addCallback(this)
-
-        mapPhotoList.adapter = mPhotoAdapter
-        mapPhotoList.addOnPageChangeListener(this)
     }
 
     override fun onMapReady(p0: GoogleMap?) {
         if(p0 != null) {
             mMapView = p0
             mMapView.uiSettings.isCompassEnabled = true
-            mMapView.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(DEFAULT_LAT, DEFAULT_LNG), DEFAULT_ZOOM))
+            mMapView.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(DEFAULT_LAT, DEFAULT_LNG), DEFAULT_ZOOM))
             mMapView.setOnMarkerClickListener { marker->
                 //when the marker is clicked, center the map on it's location, and scroll the list to the item
-                mMapView.animateCamera(CameraUpdateFactory.newLatLng(marker.position))
+//                mMapView.animateCamera(CameraUpdateFactory.newLatLng(marker.position))
                 val item = findPhotoByMarker(marker)
                 if(item != null)
-                    mapPhotoList.setCurrentItem(mPhotoAdapter.getItemPosition(item), true)
+                    (activity as MainActivity).openDetailFragment(item)
                 true
             }
             //initialize call to display data
@@ -148,12 +139,6 @@ class MapFragment : Fragment(), OnMapReadyCallback,
         }
         return null
     }
-    /**
-     * the item in the adapter has been clicked
-     */
-    override fun onItemClicked(photoItem: GsonPhoto) {
-        (activity as MainActivity).openDetailFragment(photoItem)
-    }
 
 
     /**
@@ -161,21 +146,17 @@ class MapFragment : Fragment(), OnMapReadyCallback,
      * still need to handle the case that the list might be empty
      */
     override fun onPhotoReady(photos: ArrayList<GsonPhoto>) {
-        //reset the data first
-        mLastSelectedMarker = null
+        Log.i("onPhotoReady", "Received " + photos.size + " data")
         mMapView.clear()
         mPhotoMarkerMap.clear()
-        mPhotoAdapter.clearData()
-
-        mPhotoAdapter.setData(photos)
-        if(photos.size > 0) {
-            errorTextView.visibility = View.GONE
+        mResultSize = photos.size
+        //reset processing
+        mProcessingSize = 0
+        if(mResultSize > 0) {
             for(item : GsonPhoto in photos) {
                 createMarker(item)
             }
             zoomToDisplayAllMarker()
-            //move to the first item
-            mapPhotoList.setCurrentItem(0, true)
         }else {
             displayErrorMessage(getString(R.string.error_empty))
         }
@@ -198,17 +179,6 @@ class MapFragment : Fragment(), OnMapReadyCallback,
                         padding))
     }
 
-    fun displayMarker(item : GsonPhoto) {
-        val marker = mPhotoMarkerMap[item]
-        if(mLastSelectedMarker != null) {
-            MarkerGenerator.resetMarker(mLastSelectedMarker)
-        }
-        MarkerGenerator.enlargeMarker(marker, activity)
-        mLastSelectedMarker = marker
-        //center to the marker
-//        mMapView.animateCamera(CameraUpdateFactory.newLatLngZoom(item.getLatLng(), 16f))
-    }
-
     /**
      * callback when the request was not successful or error
      */
@@ -217,55 +187,16 @@ class MapFragment : Fragment(), OnMapReadyCallback,
     }
 
     fun displayErrorMessage(message : String) {
-        errorTextView.visibility = View.VISIBLE
-        errorTextView.text = message
-    }
-
-
-    /**
-     * Called when the scroll state changes. Useful for discovering when the user
-     * begins dragging, when the pager is automatically settling to the current page,
-     * or when it is fully stopped/idle.
-
-     * @param state The new scroll state.
-     * *
-     * @see ViewPager.SCROLL_STATE_IDLE
-
-     * @see ViewPager.SCROLL_STATE_DRAGGING
-
-     * @see ViewPager.SCROLL_STATE_SETTLING
-     */
-    override fun onPageScrollStateChanged(state: Int) {
-    }
-
-    /**
-     * This method will be invoked when the current page is scrolled, either as part
-     * of a programmatically initiated smooth scroll or a user initiated touch scroll.
-
-     * @param position Position index of the first page currently being displayed.
-     * *                 Page position+1 will be visible if positionOffset is nonzero.
-     * *
-     * @param positionOffset Value from [0, 1) indicating the offset from the page at position.
-     * *
-     * @param positionOffsetPixels Value in pixels indicating the offset from position.
-     */
-    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-    }
-
-    /**
-     * This method will be invoked when a new page becomes selected. Animation is not
-     * necessarily complete.
-
-     * @param position Position index of the new selected page.
-     */
-    override fun onPageSelected(position: Int) {
-        displayMarker(mPhotoAdapter.photoList[position])
+        Snackbar.make(mapView, message, Snackbar.LENGTH_LONG).show()
     }
 
     // create an marker, add it to map and put it into the array list
     fun createMarker(item : GsonPhoto) {
         mPhotoMarkerMap.put(item,
-                mMapView.addMarker(MarkerGenerator.createMarker(item)))
+                mMapView.addMarker(MarkerOptions()
+                        .position(item.getLatLng())
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))))
+
     }
 
     override fun onResume() {

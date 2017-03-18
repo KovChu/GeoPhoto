@@ -2,14 +2,14 @@ package com.kuanyi.geophoto.component
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
-import android.support.v4.content.ContextCompat
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import android.graphics.Canvas
+import android.graphics.Color
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.RelativeLayout
 import com.kuanyi.geophoto.R
-import com.kuanyi.geophoto.model.GsonPhoto
-
 
 
 /**
@@ -17,32 +17,62 @@ import com.kuanyi.geophoto.model.GsonPhoto
  * enlarge or reset marker
  * Created by kuanyi on 2017/3/16.
  */
-class MarkerGenerator {
+class MarkerGenerator(val context : Context) {
 
-    companion object {
+    lateinit private var mContainer: ViewGroup
+    lateinit private var mUserImage: ImageView
 
-        @JvmStatic fun createMarker(item : GsonPhoto) : MarkerOptions {
-            return MarkerOptions().position(item.getLatLng())
-                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_marker))
-                    .title(item.id)
-                    .zIndex(1f)
-        }
-
-        @JvmStatic fun enlargeMarker(marker: Marker?, context: Context) {
-            val d = ContextCompat.getDrawable(context, R.drawable.ic_map_marker_selected)
-
-            d.level = 1234
-            val b = (d.current as BitmapDrawable).bitmap
-            val scaleBitmap = Bitmap.createScaledBitmap(
-                    b, (b.width * 1.3).toInt(), (b.height * 1.3).toInt(), false)
-            marker?.setIcon(BitmapDescriptorFactory.fromBitmap(scaleBitmap))
-            //bring the marker to front to be visible
-            marker?.zIndex = 10f
-        }
-
-        @JvmStatic fun resetMarker(marker : Marker?) {
-            marker?.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ic_map_marker))
-        }
-
+    fun createUserMarkerImage(image : Bitmap?) : Bitmap? {
+        setupView()
+        mUserImage.setImageBitmap(image)
+        return makeIcon()
     }
+
+    /**
+     * Ensure views are ready. This allows us to lazily inflate the main layout.
+     */
+    private fun setupView() {
+        mContainer = LayoutInflater.from(context).inflate(R.layout.map_marker, null) as ViewGroup
+        mContainer.layoutParams = RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT)
+        mUserImage = mContainer.findViewById(R.id.markerImage) as ImageView
+    }
+
+    /**
+     * Creates an icon with the current content and style.
+     *
+     *
+     * This method is useful if a custom view has previously been set, or if text content is not
+     * applicable.
+     */
+    private fun makeIcon(): Bitmap? {
+        try {
+            val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            mContainer.measure(measureSpec, measureSpec)
+
+            val measuredWidth = mContainer.measuredWidth
+            val measuredHeight = mContainer.measuredHeight
+            if (measuredHeight == 0 || measuredWidth == 0) {
+                //when the width or height is 0, this mean there is something wrong with the container
+                //do not proceed or crash will happen
+                return null
+            }
+            mContainer.layout(0, 0, measuredWidth, measuredHeight)
+
+            val r = Bitmap.createBitmap(measuredWidth, measuredHeight, Bitmap.Config.ARGB_8888)
+
+            r.eraseColor(Color.TRANSPARENT)
+
+            val canvas = Canvas(r)
+            mContainer.draw(canvas)
+            return r
+        } catch (e: IllegalStateException) {
+            //java.lang.IllegalStateException: onMeasure() did not set the measured dimension by calling setMeasuredDimension()
+            //will occur periodically when running container.measure.
+            //use a try/catch to catch the exception and return null to force the IconManager to reset and draw again.
+            e.printStackTrace()
+            return null
+        }
+    }
+
 }
