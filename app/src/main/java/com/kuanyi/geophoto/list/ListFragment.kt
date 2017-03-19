@@ -4,7 +4,7 @@ import android.app.Fragment
 import android.os.Bundle
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.GridLayoutManager
-import android.util.Log
+import android.support.v7.widget.RecyclerView
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +19,8 @@ import kotlinx.android.synthetic.main.fragment_list.*
 
 
 /**
+ * The list fragment that will display the items in a grid fashion
+ * the column of the grid will be determine by the
  * Created by kuanyi on 2017/3/17.
  */
 class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdapter.onPhotoItemClickListener {
@@ -32,11 +34,10 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdap
         return parentView
     }
 
-
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         val column = calculateColumnCount()
-        listRecyclerView.layoutManager = GridLayoutManager(activity, column)
+        listRecyclerView.layoutManager = GridLayoutManager(activity, column) as RecyclerView.LayoutManager?
         listRecyclerView.addItemDecoration(GridSpacingItemDecorator(column, dpToPx(8), true))
         listRecyclerView.itemAnimator = DefaultItemAnimator()
         listRecyclerView.adapter = mRecyclerAdapter
@@ -45,10 +46,8 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdap
         }
     }
 
+    //180 is the item's width with padding
     private fun calculateColumnCount(): Int {
-
-        Log.i("Screen", "width = " + resources.displayMetrics.widthPixels
-                + ", height = " + resources.displayMetrics.heightPixels)
         return (resources.displayMetrics.widthPixels / (180 * resources.displayMetrics.density)).toInt()
     }
 
@@ -61,8 +60,10 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdap
      * Converting dp to pixel
      */
     private fun dpToPx(dp: Int): Int {
-        val r = resources
-        return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), r.displayMetrics))
+        return Math.round(
+                TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(),
+                        resources.displayMetrics))
     }
 
 
@@ -75,6 +76,7 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdap
         mRecyclerAdapter.setData(photos)
         if(photos.size > 0) {
             errorTextView.visibility = View.GONE
+            //reset when new data arrive
             listRecyclerView.smoothScrollToPosition(0)
         }else {
             displayErrorMessage(getString(R.string.error_empty))

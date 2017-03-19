@@ -21,7 +21,7 @@ class DataManager private constructor() {
 
     var hasRequestedData = false
 
-    //store the map data that user was viewing
+    //store the map camera data that user was viewing
     var previousLatLng : LatLng? = null
     var previousZoom : Float = 0.0f
 
@@ -73,6 +73,15 @@ class DataManager private constructor() {
         mPhotoReadyCallback.add(callback)
     }
 
+    fun removeCallback(callback : PhotoCallback) {
+        mPhotoReadyCallback.remove(callback)
+    }
+
+    fun resetData() {
+        hasRequestedData = false
+        resultData = null
+        mPhotoReadyCallback.clear()
+    }
 
     interface PhotoCallback {
         /**
@@ -85,15 +94,5 @@ class DataManager private constructor() {
          * callback when the request was not successful or error
          */
         fun onDataError()
-    }
-
-    fun removeCallback(callback : PhotoCallback) {
-        mPhotoReadyCallback.remove(callback)
-    }
-
-    fun resetData() {
-        hasRequestedData = false
-        resultData = null
-        mPhotoReadyCallback.clear()
     }
 }

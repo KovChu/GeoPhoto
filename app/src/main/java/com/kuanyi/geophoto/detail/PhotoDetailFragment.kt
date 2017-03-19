@@ -3,8 +3,8 @@ package com.kuanyi.geophoto.detail
 import android.app.Fragment
 import android.os.Build
 import android.os.Bundle
+import android.support.v4.app.ActivityCompat
 import android.support.v4.app.ActivityCompat.postponeEnterTransition
-import android.support.v4.app.ActivityCompat.startPostponedEnterTransition
 import android.transition.TransitionInflater
 import android.view.*
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -18,6 +18,8 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.fragment_photo_detail.*
 
 /**
+ * The detail fragment that will display an item's image,
+ * location, title, user and description
  * Created by kuanyi on 2017/3/17.
  */
 class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : Fragment(), OnMapReadyCallback {
@@ -28,13 +30,12 @@ class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (!isFromMap) {
-                postponeEnterTransition(activity)
-                sharedElementEnterTransition = TransitionInflater
-                        .from(activity)
-                        .inflateTransition(android.R.transition.move);
-            }
+        //only need this when calling from the ListFragment
+        if(!isFromMap && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            postponeEnterTransition(activity)
+            sharedElementEnterTransition = TransitionInflater
+                    .from(activity)
+                    .inflateTransition(android.R.transition.move);
         }
     }
 
@@ -60,13 +61,10 @@ class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : 
                 .load(photoItem.buildPhotoUrl("h"))
                 .placeholder(R.color.black)
                 .into(photoDetailImage)
-        supportStartPostponedEnterTransition()
-    }
 
-    private fun supportStartPostponedEnterTransition() {
         if (!isFromMap && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             photoDetailImage.transitionName = photoItem.title
-            startPostponedEnterTransition(activity)
+            ActivityCompat.startPostponedEnterTransition(activity)
         }
     }
 
@@ -91,7 +89,7 @@ class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : 
 
     override fun onDetach() {
         super.onDetach()
-        //restore the title
+        //restore the title when detach
         activity.toolbar.title = getString(R.string.app_name)
     }
 

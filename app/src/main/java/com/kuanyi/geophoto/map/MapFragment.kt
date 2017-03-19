@@ -6,7 +6,6 @@ import android.location.Location
 import android.os.Bundle
 import android.os.Handler
 import android.support.design.widget.Snackbar
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +21,7 @@ import kotlinx.android.synthetic.main.fragment_maps.*
 
 
 /**
+ * The Fragment that displays the photo's location on map
  * Created by kuanyi on 2017/3/15.
  */
 class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
@@ -116,7 +116,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     }
 
     override fun onMapReady(p0: GoogleMap?) {
-        Log.i("Map", "onMapReady")
         if(p0 != null) {
             mMapView = p0
             mMapView.uiSettings.isCompassEnabled = true
@@ -141,7 +140,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
 
             //initialize call to display data
             if(!DataManager.instance.hasRequestedData) {
-                Log.i("Map", "request Data")
                 mMapView.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(DEFAULT_LAT, DEFAULT_LNG), DEFAULT_ZOOM))
                 Handler().postDelayed({
                     (activity as MainActivity).sendRequest("", true) }, 2000)
@@ -151,6 +149,22 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
                 }
             }
         }
+    }
+
+    fun zoomToDisplayAllMarker() {
+
+        val builder = LatLngBounds.Builder()
+
+        //add all marker location to the boundary
+        for (photoItem in mPhotoMarkerMap.keys) {
+            builder.include(photoItem.getLatLng())
+        }
+        val bounds = builder.build()
+        val padding = (30 * resources.displayMetrics.density).toInt()
+        mMapView.animateCamera(
+                CameraUpdateFactory.newLatLngBounds(
+                        bounds,
+                        padding))
     }
 
     private fun onRestoreData() {
@@ -174,9 +188,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
      * still need to handle the case that the list might be empty
      */
     override fun onPhotoReady(photos: ArrayList<GsonPhoto>) {
-        Log.i("Map", "onPhotoReady")
         if(isVisible) {
-            Log.i("onPhotoReady", "Received " + photos.size + " data")
             mMapView.clear()
             mPhotoMarkerMap.clear()
             mResultSize = photos.size
@@ -192,21 +204,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
         }
     }
 
-    fun zoomToDisplayAllMarker() {
-
-        val builder = LatLngBounds.Builder()
-
-        //add all marker location to the boundary
-        for (photoItem in mPhotoMarkerMap.keys) {
-            builder.include(photoItem.getLatLng())
-        }
-        val bounds = builder.build()
-        val padding = (30 * resources.displayMetrics.density).toInt()
-        mMapView.animateCamera(
-                CameraUpdateFactory.newLatLngBounds(
-                        bounds,
-                        padding))
-    }
 
     /**
      * callback when the request was not successful or error
@@ -236,16 +233,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     override fun onStop() {
         super.onStop()
         mapView.onStop()
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        Log.i("Map", "onDetach")
-    }
-
-    override fun onSaveInstanceState(outState: Bundle?) {
-        super.onSaveInstanceState(outState)
-        Log.i("Map", "onSaveInstanceState")
     }
 
     override fun onPause() {

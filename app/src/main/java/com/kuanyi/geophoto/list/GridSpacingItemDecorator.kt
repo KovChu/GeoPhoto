@@ -5,6 +5,8 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 
 /**
+ * Creates padding around the grid item
+ * http://stackoverflow.com/questions/28531996/android-recyclerview-gridlayoutmanager-column-spacing
  * Created by kuanyi on 2017/3/17.
  */
 class GridSpacingItemDecorator(var spanCount : Int, var spacing : Int, var includeEdge : Boolean) : RecyclerView.ItemDecoration() {

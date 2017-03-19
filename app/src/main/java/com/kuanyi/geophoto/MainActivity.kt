@@ -23,6 +23,10 @@ import com.kuanyi.geophoto.model.GsonPhoto
 
 
 
+/**
+ * The Activity handles the fragment transitions and action bar activities
+ * Created by kuanyi on 2017/3/15.
+ */
 class MainActivity : AppCompatActivity() {
 
     lateinit var mSwitchItem : MenuItem
@@ -68,12 +72,12 @@ class MainActivity : AppCompatActivity() {
         val searchText = mSearchView.findViewById(R.id.search_src_text) as EditText
         searchText.setOnEditorActionListener { v, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                Log.i("SearchView", "User has pressed search")
                 sendRequest(searchText.text.toString(), false)
                 //when search started, hide the keyboard
                 (getSystemService(Context.INPUT_METHOD_SERVICE)
                         as InputMethodManager).hideSoftInputFromWindow(
                         v.windowToken, 0)
+                collapseSearchView()
                 true
             }else {
                 false
@@ -86,14 +90,11 @@ class MainActivity : AppCompatActivity() {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        val id = item.itemId
-
-        when (id) {
+        when (item.itemId) {
             R.id.action_switch -> {
                 switchMapListItem()
                 return true
             }
-
         }
 
         return super.onOptionsItemSelected(item)
@@ -113,14 +114,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun collapseSearchView() {
-        MenuItemCompat.collapseActionView(mSwitchItem)
+        mSearchMenuItem.collapseActionView()
     }
     /*
         Priority of handling back pressed
         1. if the search bar is showing, hide it
-        2. if the back stack entry count is greater than 0, this mean PhotoDetailFragment is present, pop it
-        3. if the list fragment is present, pop it
-        4. system behavior
+        2. if the back stack entry count is greater than 0,
+           this mean PhotoDetailFragment is present, pop it
+        3. system behavior
      */
     override fun onBackPressed() {
         if (!mSearchView.isIconified) {
