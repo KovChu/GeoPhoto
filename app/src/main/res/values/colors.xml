@@ -7,6 +7,6 @@
     <color name="black">#000000</color>
     <color name="complete">#9040d37a</color>
     <color name="transparent">#FFFFFFFF</color>
-    <color name="mapListBkg">#40000000</color>
+    <color name="mapHintBkg">#90000000</color>
     <color name="listBkg">#e7e7e7</color>
 </resources>

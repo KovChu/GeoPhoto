@@ -9,4 +9,7 @@
     <string name="author_name_format">By %s</string>
     <string name="error_empty">No photos matches your criteria</string>
     <string name="error_internet">Cannot obtain data, please check your internet connection</string>
+
+    <string name="tutorial_switch">tap here to switch between map and list view</string>
+    <string name="tutorial_search">tap here to start a new search for photos around the current displaying area</string>
 </resources>

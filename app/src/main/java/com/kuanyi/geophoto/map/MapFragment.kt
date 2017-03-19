@@ -1,8 +1,10 @@
 package com.kuanyi.geophoto.map
 
 import android.app.Fragment
+import android.content.Context
 import android.location.Location
 import android.os.Bundle
+import android.os.Handler
 import android.support.design.widget.Snackbar
 import android.util.Log
 import android.view.LayoutInflater
@@ -31,11 +33,12 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     var mProcessingSize = 0
 
     companion object {
-        private lateinit var mMapView : GoogleMap
+        val TUTORIAL_COMPLETE = "TUTORIAL_COMPLETE"
+        lateinit var mMapView : GoogleMap
         val DEFAULT_LAT = 35.6775219
         val DEFAULT_LNG = 139.7524709
         val DEFAULT_RADIUS = 3
-        val DEFAULT_ZOOM = 14.0f
+        val DEFAULT_ZOOM = 12.0f
         var currentLat : Double = 0.0
                 //get the latitude that is currently displaying on the map
             get() = mMapView.cameraPosition.target.latitude
@@ -52,7 +55,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
                 val farLeft = visibleRegion.farLeft
                 val nearRight = visibleRegion.nearRight
                 val nearLeft = visibleRegion.nearLeft
-
 
                 val distanceWidth = FloatArray(2)
                 Location.distanceBetween(
@@ -90,16 +92,6 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
             }
     }
 
-    /**
-     * This method will only be called once when the retained
-     * Fragment is first created.
-     */
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Retain this fragment across configuration changes.
-        retainInstance = true
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         val parentView = inflater.inflate(R.layout.fragment_maps, container, false)
@@ -111,13 +103,23 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
         DataManager.instance.addCallback(this)
+        val sharePreference = activity.getSharedPreferences(MainActivity.SHARE_PREFERENCE_KEY, Context.MODE_PRIVATE)
+        if(sharePreference.getBoolean(TUTORIAL_COMPLETE, false)) {
+            onboardingLayout.visibility = View.GONE
+        }else {
+            onboardingLayout.setOnClickListener {
+                //when the user click on the layout, mark onboarding as complete
+                onboardingLayout.visibility = View.GONE
+                sharePreference.edit().putBoolean(TUTORIAL_COMPLETE, true).apply()
+            }
+        }
     }
 
     override fun onMapReady(p0: GoogleMap?) {
+        Log.i("Map", "onMapReady")
         if(p0 != null) {
             mMapView = p0
             mMapView.uiSettings.isCompassEnabled = true
-            mMapView.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(DEFAULT_LAT, DEFAULT_LNG), DEFAULT_ZOOM))
             mMapView.setOnMarkerClickListener { marker->
                 //when the marker is clicked, center the map on it's location, and scroll the list to the item
 //                mMapView.animateCamera(CameraUpdateFactory.newLatLng(marker.position))
@@ -126,41 +128,68 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
                     (activity as MainActivity).openDetailFragment(item)
                 true
             }
+            mMapView.setOnCameraIdleListener {
+                //Callback interface for when camera movement has ended.
+                //store the data to DataManage for retrieval
+                DataManager.instance.previousLatLng = mMapView.cameraPosition.target
+                DataManager.instance.previousZoom = mMapView.cameraPosition.zoom
+            }
+
+            fab.setOnClickListener {
+                zoomToDisplayAllMarker()
+            }
+
             //initialize call to display data
-            (activity as MainActivity).sendRequest("", true)
+            if(!DataManager.instance.hasRequestedData) {
+                Log.i("Map", "request Data")
+                mMapView.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(DEFAULT_LAT, DEFAULT_LNG), DEFAULT_ZOOM))
+                Handler().postDelayed({
+                    (activity as MainActivity).sendRequest("", true) }, 2000)
+            }else {
+                if(DataManager.resultData != null) {
+                    onRestoreData()
+                }
+            }
         }
     }
 
+    private fun onRestoreData() {
+        onPhotoReady(DataManager.resultData!!.photo)
+        mMapView.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                DataManager.instance.previousLatLng,
+                DataManager.instance.previousZoom))
+    }
+
     fun findPhotoByMarker(marker : Marker) : GsonPhoto? {
-        for(entry : MutableMap.MutableEntry<GsonPhoto, Marker> in mPhotoMarkerMap) {
-            if(marker == entry.value) {
-                return entry.key
+        for((key, value) in mPhotoMarkerMap) {
+            if(marker == value) {
+                return key
             }
         }
         return null
     }
-
 
     /**
      * callback when the data was successfully obtain from server
      * still need to handle the case that the list might be empty
      */
     override fun onPhotoReady(photos: ArrayList<GsonPhoto>) {
-        Log.i("onPhotoReady", "Received " + photos.size + " data")
-        mMapView.clear()
-        mPhotoMarkerMap.clear()
-        mResultSize = photos.size
-        //reset processing
-        mProcessingSize = 0
-        if(mResultSize > 0) {
-            for(item : GsonPhoto in photos) {
-                createMarker(item)
+        Log.i("Map", "onPhotoReady")
+        if(isVisible) {
+            Log.i("onPhotoReady", "Received " + photos.size + " data")
+            mMapView.clear()
+            mPhotoMarkerMap.clear()
+            mResultSize = photos.size
+            //reset processing
+            mProcessingSize = 0
+            if (mResultSize > 0) {
+                for (item: GsonPhoto in photos) {
+                    createMarker(item)
+                }
+            } else {
+                displayErrorMessage(getString(R.string.error_empty))
             }
-            zoomToDisplayAllMarker()
-        }else {
-            displayErrorMessage(getString(R.string.error_empty))
         }
-
     }
 
     fun zoomToDisplayAllMarker() {
@@ -207,6 +236,16 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     override fun onStop() {
         super.onStop()
         mapView.onStop()
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        Log.i("Map", "onDetach")
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        super.onSaveInstanceState(outState)
+        Log.i("Map", "onSaveInstanceState")
     }
 
     override fun onPause() {

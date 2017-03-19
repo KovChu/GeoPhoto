@@ -1,6 +1,7 @@
 package com.kuanyi.geophoto.manager
 
 import android.util.Log
+import com.google.android.gms.maps.model.LatLng
 import com.kuanyi.geophoto.map.MapFragment
 import com.kuanyi.geophoto.model.GsonPhoto
 import com.kuanyi.geophoto.model.GsonSearchResult
@@ -18,12 +19,19 @@ class DataManager private constructor() {
 
     private val mPhotoReadyCallback = mutableListOf<PhotoCallback>()
 
+    var hasRequestedData = false
+
+    //store the map data that user was viewing
+    var previousLatLng : LatLng? = null
+    var previousZoom : Float = 0.0f
+
     companion object {
         val instance: DataManager by lazy { Holder.INSTANCE }
         var resultData : GsonSearchResult? = null
     }
 
     fun sendRequest(tag: String?, isFirst : Boolean) {
+        hasRequestedData = true
         Log.i("DataManager", "getting data for tag = " + tag +
                 " lat = " + MapFragment.currentLat +
                 ", lng = " + MapFragment.currentLng +
@@ -79,9 +87,7 @@ class DataManager private constructor() {
         fun onDataError()
     }
 
-    fun  removeCallback(callback : PhotoCallback) {
+    fun removeCallback(callback : PhotoCallback) {
         mPhotoReadyCallback.remove(callback)
     }
-
-
 }

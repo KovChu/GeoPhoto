@@ -1,6 +1,5 @@
 package com.kuanyi.geophoto
 
-import android.app.FragmentTransaction
 import android.content.Context
 import android.os.Bundle
 import android.support.v4.view.MenuItemCompat
@@ -30,20 +29,28 @@ class MainActivity : AppCompatActivity() {
 
     var isDisplayMap = true
 
+    var mapFragment = MapFragment()
+
     companion object {
         val FRAGMENT_MAP = "FRAGMENT_MAP"
         val FRAGMENT_LIST = "FRAGMENT_LIST"
         val FRAGMENT_DETAIL = "FRAGMENT_DETAIL"
+        val SHARE_PREFERENCE_KEY = "GEOPHOTO"
 
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i("ActivityLifecycle", "onCreate")
         setContentView(R.layout.activity_main)
+        //need to reset when the Activity has created
+        //this is needed when the app was closed and re-opened
+        if(savedInstanceState == null)
+            DataManager.instance.hasRequestedData = false
         val toolbar = findViewById(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
         fragmentManager.beginTransaction()
-                .add(R.id.content, MapFragment(), FRAGMENT_MAP)
+                .add(R.id.content, mapFragment, FRAGMENT_MAP)
                 .commit()
     }
 
@@ -98,7 +105,7 @@ class MainActivity : AppCompatActivity() {
         }else {
             mSwitchItem.setIcon(R.drawable.ic_list)
             mSwitchItem.setTitle(R.string.action_display_list)
-            removeListFragment()
+            openMapFragment()
         }
         isDisplayMap = !isDisplayMap
     }
@@ -121,21 +128,10 @@ class MainActivity : AppCompatActivity() {
         if(fragmentManager.backStackEntryCount > 0) {
             fragmentManager.popBackStack()
             return
-        }else if(removeListFragment()) {
-            switchMapListItem()
         }else {
             // execute default action
             super.onBackPressed()
         }
-    }
-
-    fun removeListFragment() : Boolean {
-        val listFragment = fragmentManager.findFragmentByTag(FRAGMENT_LIST)
-        if(listFragment != null) {
-            fragmentManager.beginTransaction().remove(listFragment).commit()
-            return true
-        }
-        return false
     }
 
     fun sendRequest(tag: String?, isFirst : Boolean) {
@@ -144,8 +140,23 @@ class MainActivity : AppCompatActivity() {
 
     fun openListFragment() {
         fragmentManager.beginTransaction()
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .add(R.id.content, ListFragment(), FRAGMENT_LIST)
+                .setCustomAnimations(
+                        R.animator.card_flip_right_in,
+                        R.animator.card_flip_right_out,
+                        R.animator.card_flip_left_in,
+                        R.animator.card_flip_left_out)
+                .replace(R.id.content, ListFragment(), FRAGMENT_LIST)
+                .commit()
+    }
+
+    fun openMapFragment() {
+        fragmentManager.beginTransaction()
+                .setCustomAnimations(
+                        R.animator.card_flip_right_in,
+                        R.animator.card_flip_right_out,
+                        R.animator.card_flip_left_in,
+                        R.animator.card_flip_left_out)
+                .replace(R.id.content, mapFragment, FRAGMENT_LIST)
                 .commit()
     }
 

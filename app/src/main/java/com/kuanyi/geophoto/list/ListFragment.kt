@@ -4,6 +4,7 @@ import android.app.Fragment
 import android.os.Bundle
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.GridLayoutManager
+import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -34,13 +35,21 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, onPhotoItemClicked {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        listRecyclerView.layoutManager = GridLayoutManager(activity, 2)
-        listRecyclerView.addItemDecoration(GridSpacingItemDecorator(2, dpToPx(8), true))
+        val column = calculateColumnCount()
+        listRecyclerView.layoutManager = GridLayoutManager(activity, column)
+        listRecyclerView.addItemDecoration(GridSpacingItemDecorator(column, dpToPx(8), true))
         listRecyclerView.itemAnimator = DefaultItemAnimator()
         listRecyclerView.adapter = mRecyclerAdapter
         if(DataManager.resultData != null) {
             onPhotoReady(DataManager.resultData!!.photo)
         }
+    }
+
+    private fun calculateColumnCount(): Int {
+
+        Log.i("Screen", "width = " + resources.displayMetrics.widthPixels
+                + ", height = " + resources.displayMetrics.heightPixels)
+        return (resources.displayMetrics.widthPixels / (180 * resources.displayMetrics.density)).toInt()
     }
 
     override fun onDetach() {

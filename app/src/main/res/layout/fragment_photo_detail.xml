@@ -7,7 +7,7 @@
     <ImageView
         android:id="@+id/photoDetailImage"
         android:layout_width="match_parent"
-        android:layout_height="240dp"
+        android:layout_height="320dp"
         android:background="@color/black"
         android:scaleType="centerInside"/>
 
