@@ -125,7 +125,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
 //                mMapView.animateCamera(CameraUpdateFactory.newLatLng(marker.position))
                 val item = findPhotoByMarker(marker)
                 if(item != null)
-                    (activity as MainActivity).openDetailFragment(item)
+                    (activity as MainActivity).openDetailFragment(item, true)
                 true
             }
             mMapView.setOnCameraIdleListener {

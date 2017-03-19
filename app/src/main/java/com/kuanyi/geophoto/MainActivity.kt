@@ -152,17 +152,24 @@ class MainActivity : AppCompatActivity() {
     fun openMapFragment() {
         fragmentManager.beginTransaction()
                 .setCustomAnimations(
-                        R.animator.card_flip_right_in,
-                        R.animator.card_flip_right_out,
                         R.animator.card_flip_left_in,
-                        R.animator.card_flip_left_out)
+                        R.animator.card_flip_left_out,
+                        R.animator.card_flip_right_in,
+                        R.animator.card_flip_right_out)
                 .replace(R.id.content, mapFragment, FRAGMENT_LIST)
                 .commit()
     }
 
-    fun openDetailFragment(item : GsonPhoto) {
-        fragmentManager.beginTransaction()
-                .add(R.id.content, PhotoDetailFragment(item), FRAGMENT_DETAIL)
+    fun openDetailFragment(item : GsonPhoto, isFromMap : Boolean) {
+        val transaction = fragmentManager.beginTransaction()
+        if(isFromMap) {
+            transaction.setCustomAnimations(R.animator.slide_up_in,
+                    R.animator.slide_down_out, R.animator.slide_up_in,
+                    R.animator.slide_down_out)
+        }else {
+
+        }
+        transaction.add(R.id.content, PhotoDetailFragment(item), FRAGMENT_DETAIL)
                 .addToBackStack(FRAGMENT_DETAIL)
                 .commit()
     }

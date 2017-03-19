@@ -97,7 +97,7 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, onPhotoItemClicked {
      * the item in the adapter has been clicked
      */
     override fun onItemClicked(photoItem: GsonPhoto) {
-        (activity as MainActivity).openDetailFragment(photoItem)
+        (activity as MainActivity).openDetailFragment(photoItem, false)
     }
 
 
