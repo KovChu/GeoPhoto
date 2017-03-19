@@ -9,9 +9,9 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import com.kuanyi.geophoto.MainActivity
 import com.kuanyi.geophoto.R
-import com.kuanyi.geophoto.component.onPhotoItemClicked
 import com.kuanyi.geophoto.manager.DataManager
 import com.kuanyi.geophoto.model.GsonPhoto
 import kotlinx.android.synthetic.main.fragment_list.*
@@ -21,7 +21,7 @@ import kotlinx.android.synthetic.main.fragment_list.*
 /**
  * Created by kuanyi on 2017/3/17.
  */
-class ListFragment : Fragment(), DataManager.PhotoCallback, onPhotoItemClicked {
+class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdapter.onPhotoItemClickListener {
 
     private val mRecyclerAdapter = ListRecyclerViewAdapter(this)
 
@@ -96,8 +96,8 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, onPhotoItemClicked {
     /**
      * the item in the adapter has been clicked
      */
-    override fun onItemClicked(photoItem: GsonPhoto) {
-        (activity as MainActivity).openDetailFragment(photoItem, false)
+    override fun onItemClicked(item: GsonPhoto, imageView : ImageView) {
+        (activity as MainActivity).openDetailFragmentFromList(item, imageView)
     }
 
 

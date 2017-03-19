@@ -90,4 +90,10 @@ class DataManager private constructor() {
     fun removeCallback(callback : PhotoCallback) {
         mPhotoReadyCallback.remove(callback)
     }
+
+    fun resetData() {
+        hasRequestedData = false
+        resultData = null
+        mPhotoReadyCallback.clear()
+    }
 }

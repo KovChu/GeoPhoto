@@ -1,7 +1,11 @@
 package com.kuanyi.geophoto.detail
 
 import android.app.Fragment
+import android.os.Build
 import android.os.Bundle
+import android.support.v4.app.ActivityCompat.postponeEnterTransition
+import android.support.v4.app.ActivityCompat.startPostponedEnterTransition
+import android.transition.TransitionInflater
 import android.view.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -16,15 +20,22 @@ import kotlinx.android.synthetic.main.fragment_photo_detail.*
 /**
  * Created by kuanyi on 2017/3/17.
  */
-class PhotoDetailFragment(photoItem : GsonPhoto) : Fragment(), OnMapReadyCallback {
+class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : Fragment(), OnMapReadyCallback {
 
-    private val mPhotoItem = photoItem
 
     lateinit var mMapView : GoogleMap
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            if (!isFromMap) {
+                postponeEnterTransition(activity)
+                sharedElementEnterTransition = TransitionInflater
+                        .from(activity)
+                        .inflateTransition(android.R.transition.move);
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -37,16 +48,27 @@ class PhotoDetailFragment(photoItem : GsonPhoto) : Fragment(), OnMapReadyCallbac
         super.onActivityCreated(savedInstanceState)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync(this)
-        Picasso.with(activity)
-                .load(mPhotoItem.buildPhotoUrl("h"))
-                .placeholder(R.color.black).fit()
-                .into(photoDetailImage)
         detailUserName.text = String.format(getString(R.string.author_name_format),
-                mPhotoItem.ownername)
-        detailDescription.text = mPhotoItem.desciption
-        activity.toolbar.title = mPhotoItem.title
+                photoItem.ownername)
+        detailDescription.text = photoItem.desciption
+        activity.toolbar.title = photoItem.title
     }
 
+    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        Picasso.with(activity)
+                .load(photoItem.buildPhotoUrl("h"))
+                .placeholder(R.color.black)
+                .into(photoDetailImage)
+        supportStartPostponedEnterTransition()
+    }
+
+    private fun supportStartPostponedEnterTransition() {
+        if (!isFromMap && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            photoDetailImage.transitionName = photoItem.title
+            startPostponedEnterTransition(activity)
+        }
+    }
 
     //clear the item menu
     override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
@@ -59,10 +81,10 @@ class PhotoDetailFragment(photoItem : GsonPhoto) : Fragment(), OnMapReadyCallbac
         if(p0 != null) {
             mMapView = p0
             mMapView.uiSettings.isCompassEnabled = false
-            mMapView.moveCamera(CameraUpdateFactory.newLatLngZoom(mPhotoItem.getLatLng(), 16f))
+            mMapView.moveCamera(CameraUpdateFactory.newLatLngZoom(photoItem.getLatLng(), 16f))
             //override onMarkerClickListener so click on marker will not have any action
             mMapView.addMarker(MarkerOptions()
-                    .position(mPhotoItem.getLatLng()))
+                    .position(photoItem.getLatLng()))
             mMapView.setOnMarkerClickListener { true }
         }
     }
@@ -87,4 +109,7 @@ class PhotoDetailFragment(photoItem : GsonPhoto) : Fragment(), OnMapReadyCallbac
         super.onPause()
         mapView.onPause()
     }
+
+
+
 }

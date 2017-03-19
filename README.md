@@ -10,5 +10,6 @@ https://github.com/KovChu/GeoPhoto
  
  3rd Party Libraries used:
  
- OkHttp https://github.com/square/okhttp\
+ OkHttp https://github.com/square/okhttp  
+ 
  Picasso https://github.com/square/picasso

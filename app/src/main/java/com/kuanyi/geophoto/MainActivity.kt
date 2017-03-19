@@ -1,8 +1,10 @@
 package com.kuanyi.geophoto
 
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.support.v4.view.MenuItemCompat
+import android.support.v4.view.ViewCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.SearchView
 import android.support.v7.widget.Toolbar
@@ -12,6 +14,7 @@ import android.view.MenuItem
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.ImageView
 import com.kuanyi.geophoto.detail.PhotoDetailFragment
 import com.kuanyi.geophoto.list.ListFragment
 import com.kuanyi.geophoto.manager.DataManager
@@ -45,8 +48,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         //need to reset when the Activity has created
         //this is needed when the app was closed and re-opened
-        if(savedInstanceState == null)
-            DataManager.instance.hasRequestedData = false
+        DataManager.instance.resetData()
         val toolbar = findViewById(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
         fragmentManager.beginTransaction()
@@ -87,10 +89,10 @@ class MainActivity : AppCompatActivity() {
         val id = item.itemId
 
         when (id) {
-             R.id.action_switch -> {
-                 switchMapListItem()
-                 return true
-             }
+            R.id.action_switch -> {
+                switchMapListItem()
+                return true
+            }
 
         }
 
@@ -160,16 +162,22 @@ class MainActivity : AppCompatActivity() {
                 .commit()
     }
 
-    fun openDetailFragment(item : GsonPhoto, isFromMap : Boolean) {
-        val transaction = fragmentManager.beginTransaction()
-        if(isFromMap) {
-            transaction.setCustomAnimations(R.animator.slide_up_in,
-                    R.animator.slide_down_out, R.animator.slide_up_in,
-                    R.animator.slide_down_out)
-        }else {
+    fun openDetailFragmentFromMap(item : GsonPhoto) {
+        fragmentManager.beginTransaction().setCustomAnimations(R.animator.slide_up_in,
+                R.animator.slide_down_out, R.animator.slide_up_in,
+                R.animator.slide_down_out)
+                .add(R.id.content, PhotoDetailFragment(item, true), FRAGMENT_DETAIL)
+                .addToBackStack(FRAGMENT_DETAIL)
+                .commit()
+    }
 
+    fun openDetailFragmentFromList(item :  GsonPhoto, sharedImageView : ImageView) {
+        val transaction = fragmentManager.beginTransaction()
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            transaction.addSharedElement(sharedImageView, ViewCompat.getTransitionName(sharedImageView))
         }
-        transaction.add(R.id.content, PhotoDetailFragment(item), FRAGMENT_DETAIL)
+        //share element transition only works when the transaction is replace
+        transaction.replace(R.id.content, PhotoDetailFragment(item, false), FRAGMENT_DETAIL)
                 .addToBackStack(FRAGMENT_DETAIL)
                 .commit()
     }

@@ -1,11 +1,12 @@
 package com.kuanyi.geophoto.list
 
+import android.support.v4.view.ViewCompat
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import com.kuanyi.geophoto.R
-import com.kuanyi.geophoto.component.onPhotoItemClicked
 import com.kuanyi.geophoto.model.GsonPhoto
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.list_photo_list_item.view.*
@@ -14,7 +15,7 @@ import kotlinx.android.synthetic.main.list_photo_list_item.view.*
  * The adapter for the RecyclerView in the ListFragment
  * Created by kuanyi on 2017/3/17.
  */
-class ListRecyclerViewAdapter(val callback: onPhotoItemClicked) :
+class ListRecyclerViewAdapter(val callback: onPhotoItemClickListener) :
         RecyclerView.Adapter<ListRecyclerViewAdapter.PhotoInfoHolder>() {
 
     var photoList = mutableListOf<GsonPhoto>()
@@ -95,13 +96,23 @@ class ListRecyclerViewAdapter(val callback: onPhotoItemClicked) :
         holder.bindPhoto(photoList[position])
     }
 
-    class PhotoInfoHolder(itemView: View, val callback : onPhotoItemClicked) : RecyclerView.ViewHolder(itemView) {
+    class PhotoInfoHolder(itemView: View, val callback : onPhotoItemClickListener) : RecyclerView.ViewHolder(itemView) {
         fun bindPhoto(photoItem : GsonPhoto) {
-            Picasso.with(itemView.context).load(photoItem.buildPhotoUrl("m"))
-                    .fit().into(itemView.listItemImage)
+            Picasso.with(itemView.context)
+                    .load(photoItem.buildPhotoUrl("m"))
+                    .placeholder(R.color.black)
+                    .into(itemView.listItemImage)
+
             itemView.listItemTitle.text = photoItem.title
             itemView.listItemUserName.text = photoItem.ownername
-            itemView.setOnClickListener { callback.onItemClicked(photoItem) }
+            itemView.setOnClickListener {
+                ViewCompat.setTransitionName(itemView.listItemImage, photoItem.title)
+                callback.onItemClicked(photoItem, itemView.listItemImage)
+            }
         }
+    }
+
+    interface onPhotoItemClickListener {
+        fun onItemClicked(item : GsonPhoto, imageView : ImageView)
     }
 }

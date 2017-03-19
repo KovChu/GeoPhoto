@@ -14,8 +14,7 @@
         <ImageView
             android:id="@+id/listItemImage"
             android:layout_width="136dp"
-            android:layout_height="136dp"
-            android:scaleType="center" />
+            android:layout_height="136dp"/>
 
         <TextView
             android:id="@+id/listItemUserName"
