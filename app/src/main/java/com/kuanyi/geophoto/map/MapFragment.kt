@@ -223,7 +223,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     fun createMarker(item : GsonPhoto) {
         val generator = MarkerGenerator(activity)
         val target = MarkerImageTarget(item, generator)
-        //this is needed since Picasso store target in weakference
+        //this is needed since Picasso store target in WeakReference, so we need to force the target
+        //to be strong reference to ensure it persist
         mTargetList.add(target)
         Picasso.with(activity).load(item.buildPhotoUrl("q"))
                 .error(R.color.black)
