@@ -12,6 +12,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.MarkerOptions
 import com.kuanyi.geophoto.R
+import com.kuanyi.geophoto.manager.DataManager
 import com.kuanyi.geophoto.model.GsonPhoto
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
@@ -22,14 +23,43 @@ import kotlinx.android.synthetic.main.fragment_photo_detail.*
  * location, title, user and description
  * Created by kuanyi on 2017/3/17.
  */
-class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : Fragment(), OnMapReadyCallback {
+class PhotoDetailFragment : Fragment(), OnMapReadyCallback {
 
+    lateinit var photoItem : GsonPhoto
+    var isFromMap = false
+
+    companion object {
+        val PHOTO_ITEM_KEY = "PHOTO_ITEM_KEY"
+        val FROM_MAP_KEY = "FROM_MAP_KEY"
+        fun newInstance(id : String, isFromMap : Boolean) : PhotoDetailFragment {
+            val args = Bundle()
+            args.putString(PHOTO_ITEM_KEY, id)
+            args.putBoolean(FROM_MAP_KEY, isFromMap)
+            val fragment = PhotoDetailFragment()
+            fragment.arguments = args
+            return fragment
+        }
+    }
 
     lateinit var mMapView : GoogleMap
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
+                              savedInstanceState: Bundle?): View? {
+        val parentView = inflater.inflate(R.layout.fragment_photo_detail, container, false)
+
+        val item = DataManager.instance.getPhotoItemById(arguments.getString(PHOTO_ITEM_KEY))
+        if(item == null) {
+            //if the data is not present, pop the fragment
+            fragmentManager.popBackStack()
+        }else {
+            photoItem = item
+        }
+        isFromMap = arguments.getBoolean(FROM_MAP_KEY)
         //only need this when calling from the ListFragment
         if(!isFromMap && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             postponeEnterTransition(activity)
@@ -37,11 +67,6 @@ class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : 
                     .from(activity)
                     .inflateTransition(android.R.transition.move);
         }
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-        val parentView = inflater.inflate(R.layout.fragment_photo_detail, container, false)
         return parentView
     }
 
@@ -52,7 +77,6 @@ class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : 
         detailUserName.text = String.format(getString(R.string.author_name_format),
                 photoItem.ownername)
         detailDescription.text = photoItem.desciption
-        activity.toolbar.title = photoItem.title
     }
 
     override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
@@ -96,6 +120,7 @@ class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : 
     override fun onResume() {
         super.onResume()
         mapView.onResume()
+        activity.toolbar.title = photoItem.title
     }
 
     override fun onStop() {
@@ -107,7 +132,4 @@ class PhotoDetailFragment(val photoItem : GsonPhoto, val isFromMap : Boolean) : 
         super.onPause()
         mapView.onPause()
     }
-
-
-
 }

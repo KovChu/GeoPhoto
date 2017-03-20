@@ -1,6 +1,7 @@
 package com.kuanyi.geophoto
 
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.support.v4.view.MenuItemCompat
@@ -36,13 +37,12 @@ class MainActivity : AppCompatActivity() {
 
     var isDisplayMap = true
 
-    var mapFragment = MapFragment()
-
     companion object {
         val FRAGMENT_MAP = "FRAGMENT_MAP"
         val FRAGMENT_LIST = "FRAGMENT_LIST"
         val FRAGMENT_DETAIL = "FRAGMENT_DETAIL"
         val SHARE_PREFERENCE_KEY = "GEOPHOTO"
+        val DISPLAY_MAP_KEY = "DISPLAY_MAP_KEY"
 
     }
 
@@ -50,19 +50,52 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         Log.i("ActivityLifecycle", "onCreate")
         setContentView(R.layout.activity_main)
+        if(savedInstanceState != null &&
+                savedInstanceState.containsKey(DISPLAY_MAP_KEY)) {
+            isDisplayMap = savedInstanceState.getBoolean(DISPLAY_MAP_KEY)
+        }
         //need to reset when the Activity has created
         //this is needed when the app was closed and re-opened
-        DataManager.instance.resetData()
+//        DataManager.instance.resetData()
         val toolbar = findViewById(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
-        fragmentManager.beginTransaction()
-                .add(R.id.content, mapFragment, FRAGMENT_MAP)
-                .commit()
+        if(savedInstanceState == null) {
+            if (isDisplayMap) {
+                fragmentManager.beginTransaction()
+                        .add(R.id.content, MapFragment(), FRAGMENT_MAP)
+                        .commit()
+            } else {
+                fragmentManager.beginTransaction()
+                        .add(R.id.content, ListFragment(), FRAGMENT_LIST)
+                        .commit()
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    private fun checkToSetupSwitchItem() {
+        if(isDisplayMap) {
+            mSwitchItem.setIcon(R.drawable.ic_list)
+            mSwitchItem.setTitle(R.string.action_display_list)
+        }else {
+            mSwitchItem.setIcon(android.R.drawable.ic_menu_mapmode)
+            mSwitchItem.setTitle(R.string.action_display_map)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        super.onSaveInstanceState(outState)
+        outState?.putBoolean(DISPLAY_MAP_KEY, isDisplayMap)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         mSwitchItem = menu!!.findItem(R.id.action_switch)
+        checkToSetupSwitchItem()
         mSearchMenuItem = menu.findItem(R.id.action_search)
         mSearchView = MenuItemCompat.getActionView(mSearchMenuItem) as SearchView
         mSearchView.queryHint = getString(R.string.action_search_hint)
@@ -159,7 +192,7 @@ class MainActivity : AppCompatActivity() {
                         R.animator.card_flip_left_out,
                         R.animator.card_flip_right_in,
                         R.animator.card_flip_right_out)
-                .replace(R.id.content, mapFragment, FRAGMENT_LIST)
+                .replace(R.id.content, MapFragment(), FRAGMENT_LIST)
                 .commit()
     }
 
@@ -167,7 +200,7 @@ class MainActivity : AppCompatActivity() {
         fragmentManager.beginTransaction().setCustomAnimations(R.animator.slide_up_in,
                 R.animator.slide_down_out, R.animator.slide_up_in,
                 R.animator.slide_down_out)
-                .add(R.id.content, PhotoDetailFragment(item, true), FRAGMENT_DETAIL)
+                .add(R.id.content, PhotoDetailFragment.newInstance(item.id, true), FRAGMENT_DETAIL)
                 .addToBackStack(FRAGMENT_DETAIL)
                 .commit()
     }
@@ -178,7 +211,7 @@ class MainActivity : AppCompatActivity() {
             transaction.addSharedElement(sharedImageView, ViewCompat.getTransitionName(sharedImageView))
         }
         //share element transition only works when the transaction is replace
-        transaction.replace(R.id.content, PhotoDetailFragment(item, false), FRAGMENT_DETAIL)
+        transaction.replace(R.id.content, PhotoDetailFragment.newInstance(item.id, false), FRAGMENT_DETAIL)
                 .addToBackStack(FRAGMENT_DETAIL)
                 .commit()
     }

@@ -30,7 +30,6 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdap
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         val parentView = inflater.inflate(R.layout.fragment_list, container, false)
-        DataManager.instance.addCallback(this)
         return parentView
     }
 
@@ -41,8 +40,8 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdap
         listRecyclerView.addItemDecoration(GridSpacingItemDecorator(column, dpToPx(8), true))
         listRecyclerView.itemAnimator = DefaultItemAnimator()
         listRecyclerView.adapter = mRecyclerAdapter
-        if(DataManager.resultData != null) {
-            onPhotoReady(DataManager.resultData!!.photo)
+        if(DataManager.instance.resultData != null) {
+            onPhotoReady(DataManager.instance.resultData!!.photo)
         }
     }
 
@@ -51,8 +50,13 @@ class ListFragment : Fragment(), DataManager.PhotoCallback, ListRecyclerViewAdap
         return (resources.displayMetrics.widthPixels / (180 * resources.displayMetrics.density)).toInt()
     }
 
-    override fun onDetach() {
-        super.onDetach()
+    override fun onResume() {
+        super.onResume()
+        DataManager.instance.addCallback(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
         DataManager.instance.removeCallback(this)
     }
 

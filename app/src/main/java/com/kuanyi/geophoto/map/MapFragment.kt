@@ -4,7 +4,6 @@ import android.app.Fragment
 import android.content.Context
 import android.location.Location
 import android.os.Bundle
-import android.os.Handler
 import android.support.design.widget.Snackbar
 import android.view.LayoutInflater
 import android.view.View
@@ -86,7 +85,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
                 if(radius > 20)
                     radius = 20
                 else if (radius == 0)
-                    //if the radius is 0 (less than 1) set it to 1 as 0 radius might cause inappropriate result
+                //if the radius is 0 (less than 1) set it to 1 as 0 radius might cause inappropriate result
                     radius = 1
                 return radius
             }
@@ -101,8 +100,11 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         mapView.onCreate(savedInstanceState)
+    }
+
+    override fun onViewCreated(view: View?, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         mapView.getMapAsync(this)
-        DataManager.instance.addCallback(this)
         val sharePreference = activity.getSharedPreferences(MainActivity.SHARE_PREFERENCE_KEY, Context.MODE_PRIVATE)
         if(sharePreference.getBoolean(TUTORIAL_COMPLETE, false)) {
             onboardingLayout.visibility = View.GONE
@@ -141,11 +143,12 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
             //initialize call to display data
             if(!DataManager.instance.hasRequestedData) {
                 mMapView.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(DEFAULT_LAT, DEFAULT_LNG), DEFAULT_ZOOM))
-                Handler().postDelayed({
-                    (activity as MainActivity).sendRequest("", true) }, 2000)
+                (activity as MainActivity).sendRequest("", true)
             }else {
-                if(DataManager.resultData != null) {
+                if(DataManager.instance.resultData != null) {
                     onRestoreData()
+                }else {
+                    (activity as MainActivity).sendRequest("", true)
                 }
             }
         }
@@ -168,7 +171,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     }
 
     private fun onRestoreData() {
-        onPhotoReady(DataManager.resultData!!.photo)
+        onPhotoReady(DataManager.instance.resultData!!.photo)
         mMapView.moveCamera(CameraUpdateFactory.newLatLngZoom(
                 DataManager.instance.previousLatLng,
                 DataManager.instance.previousZoom))
@@ -188,19 +191,17 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
      * still need to handle the case that the list might be empty
      */
     override fun onPhotoReady(photos: ArrayList<GsonPhoto>) {
-        if(isVisible) {
-            mMapView.clear()
-            mPhotoMarkerMap.clear()
-            mResultSize = photos.size
-            //reset processing
-            mProcessingSize = 0
-            if (mResultSize > 0) {
-                for (item: GsonPhoto in photos) {
-                    createMarker(item)
-                }
-            } else {
-                displayErrorMessage(getString(R.string.error_empty))
+        mMapView.clear()
+        mPhotoMarkerMap.clear()
+        mResultSize = photos.size
+        //reset processing
+        mProcessingSize = 0
+        if (mResultSize > 0) {
+            for (item: GsonPhoto in photos) {
+                createMarker(item)
             }
+        } else {
+            displayErrorMessage(getString(R.string.error_empty))
         }
     }
 
@@ -228,11 +229,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     override fun onResume() {
         super.onResume()
         mapView.onResume()
+        DataManager.instance.addCallback(this)
     }
 
     override fun onStop() {
         super.onStop()
         mapView.onStop()
+        DataManager.instance.removeCallback(this)
     }
 
     override fun onPause() {

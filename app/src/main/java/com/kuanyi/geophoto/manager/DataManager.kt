@@ -25,9 +25,10 @@ class DataManager private constructor() {
     var previousLatLng : LatLng? = null
     var previousZoom : Float = 0.0f
 
+    var resultData : GsonSearchResult? = null
+
     companion object {
         val instance: DataManager by lazy { Holder.INSTANCE }
-        var resultData : GsonSearchResult? = null
     }
 
     fun sendRequest(tag: String?, isFirst : Boolean) {
@@ -70,7 +71,18 @@ class DataManager private constructor() {
     }
 
     fun addCallback(callback : PhotoCallback) {
-        mPhotoReadyCallback.add(callback)
+        if(!mPhotoReadyCallback.contains(callback)) {
+            mPhotoReadyCallback.add(callback)
+        }
+    }
+
+    fun getPhotoItemById(id : String) : GsonPhoto? {
+        if(resultData != null) {
+            resultData!!.photo
+                    .filter { it.id == id }
+                    .forEach { return it }
+        }
+        return null
     }
 
     fun removeCallback(callback : PhotoCallback) {
