@@ -2,6 +2,9 @@ package com.kuanyi.geophoto.map
 
 import android.app.Fragment
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.location.Location
 import android.os.Bundle
 import android.support.design.widget.Snackbar
@@ -16,6 +19,8 @@ import com.kuanyi.geophoto.MainActivity
 import com.kuanyi.geophoto.R
 import com.kuanyi.geophoto.manager.DataManager
 import com.kuanyi.geophoto.model.GsonPhoto
+import com.squareup.picasso.Picasso
+import com.squareup.picasso.Target
 import kotlinx.android.synthetic.main.fragment_maps.*
 
 
@@ -27,9 +32,7 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
 
     var mPhotoMarkerMap = HashMap<GsonPhoto, Marker>()
 
-    var mResultSize = 0
-
-    var mProcessingSize = 0
+    val mTargetList = mutableListOf<Target>()
 
     companion object {
         val TUTORIAL_COMPLETE = "TUTORIAL_COMPLETE"
@@ -155,19 +158,20 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     }
 
     fun zoomToDisplayAllMarker() {
+        if(!mPhotoMarkerMap.isEmpty()) {
+            val builder = LatLngBounds.Builder()
 
-        val builder = LatLngBounds.Builder()
-
-        //add all marker location to the boundary
-        for (photoItem in mPhotoMarkerMap.keys) {
-            builder.include(photoItem.getLatLng())
+            //add all marker location to the boundary
+            for (photoItem in mPhotoMarkerMap.keys) {
+                builder.include(photoItem.getLatLng())
+            }
+            val bounds = builder.build()
+            val padding = (30 * resources.displayMetrics.density).toInt()
+            mMapView.animateCamera(
+                    CameraUpdateFactory.newLatLngBounds(
+                            bounds,
+                            padding))
         }
-        val bounds = builder.build()
-        val padding = (30 * resources.displayMetrics.density).toInt()
-        mMapView.animateCamera(
-                CameraUpdateFactory.newLatLngBounds(
-                        bounds,
-                        padding))
     }
 
     private fun onRestoreData() {
@@ -193,10 +197,8 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     override fun onPhotoReady(photos: ArrayList<GsonPhoto>) {
         mMapView.clear()
         mPhotoMarkerMap.clear()
-        mResultSize = photos.size
-        //reset processing
-        mProcessingSize = 0
-        if (mResultSize > 0) {
+        mTargetList.clear()
+        if (photos.size > 0) {
             for (item: GsonPhoto in photos) {
                 createMarker(item)
             }
@@ -219,11 +221,13 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
 
     // create an marker, add it to map and put it into the array list
     fun createMarker(item : GsonPhoto) {
-        mPhotoMarkerMap.put(item,
-                mMapView.addMarker(MarkerOptions()
-                        .position(item.getLatLng())
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))))
-
+        val generator = MarkerGenerator(activity)
+        val target = MarkerImageTarget(item, generator)
+        //this is needed since Picasso store target in weakference
+        mTargetList.add(target)
+        Picasso.with(activity).load(item.buildPhotoUrl("q"))
+                .error(R.color.black)
+                .into(target)
     }
 
     override fun onResume() {
@@ -241,5 +245,48 @@ class MapFragment : Fragment(), OnMapReadyCallback, DataManager.PhotoCallback {
     override fun onPause() {
         super.onPause()
         mapView.onPause()
+    }
+
+    inner class MarkerImageTarget(val item : GsonPhoto, val generator : MarkerGenerator) : Target {
+        /**
+         * Callback invoked right before your request is submitted.
+         *
+         *
+         * **Note:** The passed [Drawable] may be `null` if none has been
+         * specified via [RequestCreator.placeholder]
+         * or [RequestCreator.placeholder].
+         */
+        override fun onPrepareLoad(placeHolderDrawable: Drawable?) {
+        }
+
+        /**
+         * Callback indicating the image could not be successfully loaded.
+         *
+         *
+         * **Note:** The passed [Drawable] may be `null` if none has been
+         * specified via [RequestCreator.error]
+         * or [RequestCreator.error].
+         */
+        override fun onBitmapFailed(errorDrawable: Drawable?) {
+            addMarker(BitmapFactory.decodeResource(activity.resources, R.color.black))
+        }
+
+        /**
+         * Callback when an image has been successfully loaded.
+         *
+         *
+         * **Note:** You must not recycle the bitmap.
+         */
+        override fun onBitmapLoaded(bitmap: Bitmap?, from: Picasso.LoadedFrom?) {
+            addMarker(bitmap)
+        }
+
+        private fun addMarker(bitmap: Bitmap?) {
+            mPhotoMarkerMap.put(item,
+                    mMapView.addMarker(MarkerOptions()
+                            .position(item.getLatLng())
+                            .icon(BitmapDescriptorFactory.fromBitmap(generator.createUserMarkerImage(bitmap)))))
+            mTargetList.remove(this)
+        }
     }
 }

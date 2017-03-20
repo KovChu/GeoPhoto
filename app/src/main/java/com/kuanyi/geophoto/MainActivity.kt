@@ -54,9 +54,6 @@ class MainActivity : AppCompatActivity() {
                 savedInstanceState.containsKey(DISPLAY_MAP_KEY)) {
             isDisplayMap = savedInstanceState.getBoolean(DISPLAY_MAP_KEY)
         }
-        //need to reset when the Activity has created
-        //this is needed when the app was closed and re-opened
-//        DataManager.instance.resetData()
         val toolbar = findViewById(R.id.toolbar) as Toolbar
         setSupportActionBar(toolbar)
         if(savedInstanceState == null) {
